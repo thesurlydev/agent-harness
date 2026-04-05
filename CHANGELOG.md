@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-04-05
+
 ### Changed
 
 - Externalized Claude prompts into `prompts/generate_intents.md` and `prompts/generate_fixes.md` for easier inspection and editing. Prompts are embedded at compile time via `include_str!`.
