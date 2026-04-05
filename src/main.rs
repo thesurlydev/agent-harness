@@ -14,6 +14,8 @@ async fn main() {
         anthropic_api_key: api_key,
         model: cli.model,
         agent_name: cli.agent_name,
+        project_dir: cli.project_dir,
+        max_fix_rounds: cli.max_fix_rounds,
     };
     runner::run(config).await;
 }
@@ -24,6 +26,12 @@ struct Cli {
     pub token: String,
     pub model: String,
     pub agent_name: String,
+    /// Project directory for cargo check fix loop (enables compile-fix cycle after all tasks)
+    #[arg(long)]
+    pub project_dir: Option<String>,
+    /// Max fix rounds for compile-fix loop
+    #[arg(long, default_value = "3")]
+    pub max_fix_rounds: u32,
 }
 
 

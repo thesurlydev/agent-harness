@@ -6,6 +6,8 @@ pub struct AgentConfig {
     pub anthropic_api_key: String,
     pub model: String,
     pub agent_name: String,
+    pub project_dir: Option<String>,
+    pub max_fix_rounds: u32,
 }
 #[derive(Debug, Clone, Deserialize)]
 pub struct Task {
