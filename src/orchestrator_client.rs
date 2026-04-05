@@ -1,4 +1,4 @@
-use crate::types::{AgentConfig, Task, IntentWrapper};
+use crate::types::{AgentConfig, Task, IntentWrapper, PrdIntentWrapper, PrdCompletenessResponse};
 pub struct OrchestratorClient {
     pub client: reqwest::Client,
     pub base_url: String,
@@ -77,6 +77,33 @@ impl OrchestratorClient {
             .send()
             .await?;
         Ok(resp.status().is_success())
+    }
+    pub async fn get_prd_source(&self) -> Result<String, reqwest::Error> {
+        let url = format!("{}/a2a/prd-source", self.base_url);
+        let resp = self.client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .send().await?
+            .text().await?;
+        Ok(resp)
+    }
+    pub async fn apply_prd_intent(&self, wrapper: &PrdIntentWrapper) -> Result<bool, reqwest::Error> {
+        let url = format!("{}/a2a/prd-intents", self.base_url);
+        let resp = self.client
+            .post(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .json(&wrapper)
+            .send().await?;
+        Ok(resp.status().is_success())
+    }
+    pub async fn get_prd_completeness(&self) -> Result<PrdCompletenessResponse, reqwest::Error> {
+        let url = format!("{}/a2a/prd-completeness", self.base_url);
+        let resp = self.client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .send().await?
+            .json::<PrdCompletenessResponse>().await?;
+        Ok(resp)
     }
 }
 
