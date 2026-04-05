@@ -21,14 +21,22 @@ pub async fn run(config: AgentConfig) {
                 .generate_intents(&source, &task.description)
                 .await
                 .unwrap();
-            let intents: Vec<IntentWrapper> = match serde_json::from_str(&response) {
+            // Strip markdown code fences if present
+            let cleaned = response.trim();
+            let cleaned = if cleaned.starts_with("```") {
+                let start = cleaned.find('\n').map(|i| i + 1).unwrap_or(0);
+                let end = cleaned.rfind("```").unwrap_or(cleaned.len());
+                &cleaned[start..end]
+            } else {
+                cleaned
+            };
+            let intents: Vec<IntentWrapper> = match serde_json::from_str(cleaned) {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!(
                         "Failed to parse intents: {}. Response: {}", e, &
-                        response[..response.len().min(500)]
+                        cleaned[..cleaned.len().min(500)]
                     );
-                    orch.complete_task(&task.id).await.unwrap();
                     continue;
                 }
             };
