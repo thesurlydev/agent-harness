@@ -2,6 +2,7 @@ use clap::Parser;
 use crate::types::{AgentConfig, AgentMode};
 mod claude_client;
 mod orchestrator_client;
+mod prd_runner;
 mod runner;
 mod types;
 #[tokio::main]
@@ -23,7 +24,10 @@ async fn main() {
         mode,
         app_type: cli.app_type,
     };
-    runner::run(config).await;
+    match config.mode {
+        AgentMode::Code => runner::run(config).await,
+        AgentMode::Prd => prd_runner::run_prd_enrichment(&config).await,
+    }
 }
 #[derive(Parser)]
 #[command(name = "agent-harness", about = "Auto-dispatch factory tasks to Claude API")]
