@@ -16,11 +16,11 @@ No page without defined data requirements and loading/error states.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- add_page: {"prd_intent":{"type":"add_page","name":"BookmarkList","route":"/bookmarks","data_requirements":["GET /api/bookmarks with cursor pagination"],"loading_state":"skeleton list with 10 placeholder rows","error_state":"retry banner with 'Failed to load bookmarks' message","empty_state":"illustration with 'No bookmarks yet. Add your first one!' and CTA button"}}
-- add_component: {"prd_intent":{"type":"add_component","name":"BookmarkCard","props":[{"name":"bookmark","type":"Bookmark","required":true},{"name":"onDelete","type":"(id: string) => void","required":true},{"name":"onEdit","type":"(id: string) => void","required":true}],"description":"displays a single bookmark with title, URL, tags, and action buttons"}}
-- set_data_flow: {"prd_intent":{"type":"set_data_flow","page":"BookmarkList","pattern":"TanStack Query","query_key":["bookmarks",{"tag":"selectedTag","cursor":"currentCursor"}],"cache_time_ms":300000,"stale_time_ms":60000,"refetch_on_window_focus":true,"rationale":"cursor-based pagination with tag filter; cache for 5 min, stale after 1 min"}}
-- add_client_route: {"prd_intent":{"type":"add_client_route","path":"/bookmarks","component":"BookmarkList","layout":"AppLayout","auth_required":true,"title":"My Bookmarks"}}
-- set_loading_state: {"prd_intent":{"type":"set_loading_state","component":"BookmarkList","initial_load":"skeleton with 10 rows matching BookmarkCard dimensions","pagination_load":"spinner below last item, existing items remain visible","mutation_load":"optimistic update with rollback on error"}}
+- add_page: {"prd_intent":{"type":"add_page","path":"/bookmarks","title":"BookmarkList","components":["BookmarkCard","Pagination","EmptyState"],"data_requirements":["GET /api/bookmarks with cursor pagination"]}}
+- add_component: {"prd_intent":{"type":"add_component","name":"BookmarkCard","props":[{"name":"bookmark","field_type":"Bookmark","optional":false,"description":"the bookmark to display"},{"name":"onDelete","field_type":"(id: string) => void","optional":false,"description":"callback when delete is clicked"},{"name":"onEdit","field_type":"(id: string) => void","optional":false,"description":"callback when edit is clicked"}],"description":"displays a single bookmark with title, URL, tags, and action buttons"}}
+- set_data_flow: {"prd_intent":{"type":"set_data_flow","page":"BookmarkList","pattern":"TanStack Query","description":"cursor-based pagination with tag filter; cache for 5 min, stale after 1 min"}}
+- add_client_route: {"prd_intent":{"type":"add_client_route","path":"/bookmarks","page":"BookmarkList","auth_required":true}}
+- set_loading_state: {"prd_intent":{"type":"set_loading_state","page":"BookmarkList","strategy":"skeleton with 10 rows matching BookmarkCard dimensions","fallback":"spinner"}}
 
 ## Frontend Patterns
 - Routing: React Router v6 with layout routes; auth guard on protected pages

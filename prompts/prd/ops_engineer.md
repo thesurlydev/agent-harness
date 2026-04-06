@@ -16,11 +16,11 @@ No deployed service without health endpoint, structured logging, and documented 
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- add_health_check: {"prd_intent":{"type":"add_health_check","path":"/health","checks":[{"name":"database","method":"SELECT 1","timeout_ms":2000},{"name":"self","method":"uptime and version"}],"response_healthy":{"status":"healthy","version":"0.1.0","checks":{"database":"ok","self":"ok"}},"response_degraded":{"status":"degraded","checks":{"database":"timeout","self":"ok"}}}}
-- set_env_var: {"prd_intent":{"type":"set_env_var","name":"DATABASE_URL","required":true,"format":"postgres://user:pass@host:5432/dbname","description":"Postgres connection string","secret":true}}
-- set_logging_config: {"prd_intent":{"type":"set_logging_config","framework":"tracing + tracing-subscriber","default_level":"info","module_overrides":{"sqlx":"warn","tower_http":"debug"},"format":"json in production, pretty in development","fields":["request_id","method","path","status","latency_ms"]}}
-- add_graceful_shutdown: {"prd_intent":{"type":"add_graceful_shutdown","signal":"SIGTERM","drain_timeout_seconds":30,"behavior":"stop accepting new connections, finish in-flight requests, close database pool, exit 0"}}
-- set_pool_config: {"prd_intent":{"type":"set_pool_config","pool_type":"database","min_connections":2,"max_connections":10,"acquire_timeout_seconds":5,"idle_timeout_seconds":300,"max_lifetime_seconds":1800,"rationale":"sized for single-instance deployment; scale max_connections with traffic"}}
+- add_health_check: {"prd_intent":{"type":"add_health_check","path":"/health","checks":["database: SELECT 1 with 2s timeout","self: uptime and version"]}}
+- set_env_var: {"prd_intent":{"type":"set_env_var","name":"DATABASE_URL","description":"Postgres connection string","required":true,"default":null}}
+- set_logging_config: {"prd_intent":{"type":"set_logging_config","level":"info","format":"json in production, pretty in development","targets":["sqlx=warn","tower_http=debug"]}}
+- add_graceful_shutdown: {"prd_intent":{"type":"add_graceful_shutdown","signal":"SIGTERM","timeout_secs":30,"drain_connections":true}}
+- set_pool_config: {"prd_intent":{"type":"set_pool_config","pool_type":"database","min_connections":2,"max_connections":10,"idle_timeout_secs":300}}
 - add_app_toml_field: {"prd_intent":{"type":"add_app_toml_field","section":"[env]","key":"PORT","value":"8080","description":"HTTP listen port for the application"}}
 
 ## Operational Checklist
@@ -34,7 +34,7 @@ No deployed service without health endpoint, structured logging, and documented 
 ## Rules
 - Output ONLY a JSON array, no markdown, no explanation
 - Each element is: {"prd_intent": {<intent object>}}
-- Every environment variable must specify whether it is required and whether it is secret
+- Every environment variable must specify whether it is required and provide a default if applicable
 - Health check must verify database connectivity, not just return 200
 - Pool configuration must include rationale for sizing choices
 - Logging must include request_id for traceability

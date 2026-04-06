@@ -16,10 +16,10 @@ No feature survives without a concrete user scenario justifying it.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- remove_feature: {"prd_intent":{"type":"remove_feature","feature":"bookmark sharing via public links","rationale":"no user scenario requires sharing in MVP; adds auth complexity and public URL management"}}
-- simplify_route: {"prd_intent":{"type":"simplify_route","path":"/api/bookmarks/{id}/tags/{tag_id}","simplification":"use PUT /api/bookmarks/{id} with tags array in body instead of separate tag sub-resource","rationale":"fewer endpoints, simpler client code, tags are small enough to replace wholesale"}}
-- merge_endpoints: {"prd_intent":{"type":"merge_endpoints","endpoints":["PATCH /api/bookmarks/{id}/title","PATCH /api/bookmarks/{id}/tags","PATCH /api/bookmarks/{id}/status"],"merged_into":"PATCH /api/bookmarks/{id}","rationale":"single partial-update endpoint with optional fields is simpler than field-specific routes"}}
-- challenge_complexity: {"prd_intent":{"type":"challenge_complexity","feature":"real-time bookmark sync via WebSocket","challenge":"polling every 30 seconds achieves the same UX for a single-user app","recommendation":"use simple polling; add WebSocket only if latency requirements demand it"}}
+- remove_feature: {"prd_intent":{"type":"remove_feature","feature":"bookmark sharing via public links","reason":"no user scenario requires sharing in MVP; adds auth complexity and public URL management"}}
+- simplify_route: {"prd_intent":{"type":"simplify_route","route":"DELETE /api/bookmarks/{id}/tags/{tag_id}","simplification":"use PUT /api/bookmarks/{id} with tags array in body instead of separate tag sub-resource"}}
+- merge_endpoints: {"prd_intent":{"type":"merge_endpoints","routes":["PATCH /api/bookmarks/{id}/title","PATCH /api/bookmarks/{id}/tags","PATCH /api/bookmarks/{id}/status"],"merged_route":"PATCH /api/bookmarks/{id}","rationale":"single partial-update endpoint with optional fields is simpler than field-specific routes"}}
+- challenge_complexity: {"prd_intent":{"type":"challenge_complexity","section":"real-time sync","concern":"WebSocket adds deployment complexity for a single-user app","suggestion":"use simple polling every 30 seconds; add WebSocket only if latency requirements demand it"}}
 
 ## YAGNI Checklist
 Apply these questions to every feature in the PRD:

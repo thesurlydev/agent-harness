@@ -16,10 +16,10 @@ No component without design token usage and mobile breakpoint.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- set_design_tokens: {"prd_intent":{"type":"set_design_tokens","category":"spacing","tokens":{"space-1":"4px","space-2":"8px","space-3":"12px","space-4":"16px","space-6":"24px","space-8":"32px","space-12":"48px","space-16":"64px"},"implementation":"Tailwind spacing scale (1 unit = 4px)"}}
-- add_layout_spec: {"prd_intent":{"type":"add_layout_spec","page":"BookmarkList","layout":"single column, max-w-3xl centered","header":"sticky top nav with logo left, user menu right","content":"vertical list of BookmarkCards with space-4 gap","padding":"px-4 on mobile, px-0 on md+ (container handles it)"}}
-- set_responsive_rule: {"prd_intent":{"type":"set_responsive_rule","component":"BookmarkCard","mobile":"full width, stacked layout (title above URL above tags)","tablet":"full width, title and URL on one line, tags below","desktop":"full width, title and URL on one line, tags inline right-aligned","breakpoints":{"sm":"640px","md":"768px","lg":"1024px"}}}
-- add_a11y_requirement: {"prd_intent":{"type":"add_a11y_requirement","scope":"global","requirements":[{"rule":"all interactive elements must have visible focus indicators","wcag":"2.4.7 Focus Visible"},{"rule":"color contrast ratio minimum 4.5:1 for normal text, 3:1 for large text","wcag":"1.4.3 Contrast Minimum"},{"rule":"all form inputs must have associated labels","wcag":"1.3.1 Info and Relationships"},{"rule":"all images must have alt text","wcag":"1.1.1 Non-text Content"}]}}
+- set_design_tokens: {"prd_intent":{"type":"set_design_tokens","category":"spacing","tokens":[["space-1","4px"],["space-2","8px"],["space-3","12px"],["space-4","16px"],["space-6","24px"],["space-8","32px"],["space-12","48px"],["space-16","64px"]]}}
+- add_layout_spec: {"prd_intent":{"type":"add_layout_spec","name":"BookmarkList","layout_type":"single column","properties":[["max_width","max-w-3xl centered"],["header","sticky top nav with logo left, user menu right"],["content","vertical list of BookmarkCards with space-4 gap"],["padding","px-4 on mobile, px-0 on md+"]]}}
+- set_responsive_rule: {"prd_intent":{"type":"set_responsive_rule","breakpoint":"sm (640px)","rule":"BookmarkCard: full width, stacked layout (title above URL above tags)","applies_to":"BookmarkCard"}}
+- add_a11y_requirement: {"prd_intent":{"type":"add_a11y_requirement","requirement":"all interactive elements must have visible focus indicators","wcag_level":"AA","applies_to":"global"}}
 
 ## Design System
 - Framework: Tailwind CSS with default configuration

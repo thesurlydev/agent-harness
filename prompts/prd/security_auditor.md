@@ -16,11 +16,11 @@ No user input without validation rule; no data output without exposure review.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- add_validation_rule: {"prd_intent":{"type":"add_validation_rule","field":"bookmark.url","rule":"must be valid HTTP or HTTPS URL","max_length":2048,"rationale":"prevent injection via malformed URLs and storage abuse"}}
-- add_rate_limit: {"prd_intent":{"type":"add_rate_limit","scope":"per-user","path":"/api/bookmarks","method":"POST","limit":"30 requests per minute","rationale":"prevent bookmark spam and abuse"}}
-- add_auth_requirement: {"prd_intent":{"type":"add_auth_requirement","path":"/api/bookmarks","method":"GET","auth_type":"bearer_token","requirement":"user can only access their own bookmarks","rationale":"multi-tenant data isolation"}}
-- flag_data_exposure: {"prd_intent":{"type":"flag_data_exposure","path":"/api/users/{id}","field":"password_hash","severity":"critical","recommendation":"never include password_hash in any API response; strip from all serialization"}}
-- set_cors_policy: {"prd_intent":{"type":"set_cors_policy","allowed_origins":["https://app.example.com"],"allowed_methods":["GET","POST","PUT","DELETE","OPTIONS"],"allowed_headers":["Authorization","Content-Type"],"max_age_seconds":3600,"rationale":"restrict API access to the application frontend only"}}
+- add_validation_rule: {"prd_intent":{"type":"add_validation_rule","field":"bookmark.url","rule":"must be valid HTTP or HTTPS URL, max 2048 chars","message":"URL must be a valid HTTP or HTTPS URL and no longer than 2048 characters"}}
+- add_rate_limit: {"prd_intent":{"type":"add_rate_limit","route":"POST /api/bookmarks","limit":"30 requests per minute","window":"1 minute"}}
+- add_auth_requirement: {"prd_intent":{"type":"add_auth_requirement","route":"GET /api/bookmarks","auth_type":"bearer_token","scopes":["bookmarks:read"]}}
+- flag_data_exposure: {"prd_intent":{"type":"flag_data_exposure","field":"password_hash","risk":"password hash exposed in API response","mitigation":"never include password_hash in any API response; strip from all serialization"}}
+- set_cors_policy: {"prd_intent":{"type":"set_cors_policy","origins":["https://app.example.com"],"methods":["GET","POST","PUT","DELETE","OPTIONS"],"headers":["Authorization","Content-Type"]}}
 
 ## Security Checklist
 - Input validation: every string field needs a max_length; every URL needs format validation

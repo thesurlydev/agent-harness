@@ -16,10 +16,10 @@ No happy path without at least one failure path.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- add_edge_case: {"prd_intent":{"type":"add_edge_case","feature":"bookmark creation","scenario":"URL already exists for this user","expected_behavior":"return 409 Conflict with existing bookmark ID","rationale":"duplicate detection prevents data clutter"}}
-- add_invariant: {"prd_intent":{"type":"add_invariant","scope":"bookmarks","invariant":"bookmark count per user must never exceed 10,000","enforcement":"check count before INSERT, return 422 if exceeded","rationale":"prevent unbounded growth and storage abuse"}}
-- add_error_case: {"prd_intent":{"type":"add_error_case","path":"/api/bookmarks/{id}","method":"DELETE","error":"bookmark not found","status_code":404,"response_body":{"error":{"code":"NOT_FOUND","message":"bookmark with the given ID does not exist"}}}}
-- challenge_assumption: {"prd_intent":{"type":"challenge_assumption","assumption":"users will always provide a valid URL","challenge":"what happens with unreachable URLs, localhost URLs, or URLs with non-HTTP schemes?","recommendation":"validate URL format AND restrict to http/https schemes; do not fetch/verify reachability at creation time"}}
+- add_edge_case: {"prd_intent":{"type":"add_edge_case","scenario":"URL already exists for this user","expected_behavior":"return 409 Conflict with existing bookmark ID","route":"POST /api/bookmarks"}}
+- add_invariant: {"prd_intent":{"type":"add_invariant","description":"bookmark count per user must never exceed 10,000","scope":"bookmarks"}}
+- add_error_case: {"prd_intent":{"type":"add_error_case","route":"DELETE /api/bookmarks/{id}","status":404,"condition":"bookmark not found","body":"{\"error\":{\"code\":\"NOT_FOUND\",\"message\":\"bookmark with the given ID does not exist\"}}"}}
+- challenge_assumption: {"prd_intent":{"type":"challenge_assumption","assumption":"users will always provide a valid URL","challenge":"what happens with unreachable URLs, localhost URLs, or URLs with non-HTTP schemes?","suggestion":"validate URL format AND restrict to http/https schemes; do not fetch/verify reachability at creation time"}}
 
 ## Focus Areas
 - Missing error responses: every route should define 400, 401, 404, 409, 422, 500 responses where applicable

@@ -16,11 +16,11 @@ No feature without measurable success criteria.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- set_success_metric: {"prd_intent":{"type":"set_success_metric","feature":"bookmark creation","metric":"p95 latency < 200ms","target":"95th percentile of API calls complete within 200ms"}}
+- set_success_metric: {"prd_intent":{"type":"set_success_metric","metric":"p95 bookmark creation latency < 200ms","measurement":"95th percentile of POST /api/bookmarks calls complete within 200ms"}}
 - prioritize_feature: {"prd_intent":{"type":"prioritize_feature","feature":"tag-based search","priority":"must-have","rationale":"top-3 user scenario: users need to find bookmarks by tag"}}
-- resolve_conflict: {"prd_intent":{"type":"resolve_conflict","conflict":"pagination vs infinite scroll","resolution":"use cursor-based pagination","rationale":"simpler API contract, works with caching layer"}}
-- cut_scope: {"prd_intent":{"type":"cut_scope","feature":"social sharing","rationale":"speculative; no top-3 user scenario requires it"}}
-- set_non_goal: {"prd_intent":{"type":"set_non_goal","item":"real-time collaboration","rationale":"single-user MVP; multi-user is a future phase"}}
+- resolve_conflict: {"prd_intent":{"type":"resolve_conflict","section":"pagination","resolution":"use cursor-based pagination","rationale":"simpler API contract, works with caching layer"}}
+- cut_scope: {"prd_intent":{"type":"cut_scope","feature":"social sharing","reason":"speculative; no top-3 user scenario requires it"}}
+- set_non_goal: {"prd_intent":{"type":"set_non_goal","description":"real-time collaboration","rationale":"single-user MVP; multi-user is a future phase"}}
 
 ## Decision Framework
 When deciding whether a feature stays or gets cut:

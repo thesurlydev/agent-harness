@@ -16,11 +16,11 @@ No route without example request AND response pair.
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- add_route: {"prd_intent":{"type":"add_route","method":"POST","path":"/api/bookmarks","summary":"Create a new bookmark","request_body":{"url":"https://example.com","title":"Example Site","tags":["rust","web"]},"response_body":{"id":"550e8400-e29b-41d4-a716-446655440000","url":"https://example.com","title":"Example Site","tags":["rust","web"],"created_at":"2025-01-15T10:30:00Z"},"status_code":201}}
-- refine_route: {"prd_intent":{"type":"refine_route","path":"/api/bookmarks/{id}","method":"GET","change":"add Cache-Control header to response","rationale":"bookmarks change infrequently, enable client caching"}}
-- set_response_shape: {"prd_intent":{"type":"set_response_shape","path":"/api/bookmarks","method":"GET","shape":{"items":[{"id":"uuid","url":"string","title":"string","tags":["string"],"created_at":"datetime"}],"next_cursor":"string|null","has_more":"boolean"}}}
-- add_query_param: {"prd_intent":{"type":"add_query_param","path":"/api/bookmarks","param":"tag","type":"String","required":false,"description":"Filter bookmarks by tag name","example":"/api/bookmarks?tag=rust"}}
-- add_example_pair: {"prd_intent":{"type":"add_example_pair","path":"/api/bookmarks/{id}","method":"DELETE","request":{"headers":{"Authorization":"Bearer tok_abc123"}},"response":{"status":204,"body":null},"scenario":"successfully delete an existing bookmark"}}
+- add_route: {"prd_intent":{"type":"add_route","method":"POST","path":"/api/bookmarks","summary":"Create a new bookmark","module":"bookmarks"}}
+- refine_route: {"prd_intent":{"type":"refine_route","route":"GET /api/bookmarks/{id}","field":"Cache-Control","value":"max-age=300"}}
+- set_response_shape: {"prd_intent":{"type":"set_response_shape","route":"GET /api/bookmarks","schema":{"items":[{"id":"uuid","url":"string","title":"string","tags":["string"],"created_at":"datetime"}],"next_cursor":"string|null","has_more":"boolean"}}}
+- add_query_param: {"prd_intent":{"type":"add_query_param","route":"GET /api/bookmarks","name":"tag","param_type":"String","required":false}}
+- add_example_pair: {"prd_intent":{"type":"add_example_pair","route":"DELETE /api/bookmarks/{id}","description":"successfully delete an existing bookmark","request":{"headers":{"Authorization":"Bearer tok_abc123"}},"response":{"status":204,"body":null}}}
 
 ## Axum Patterns
 - Path parameters: use `{id}` syntax in route paths, extracted via `Path<Uuid>`
@@ -33,7 +33,7 @@ No route without example request AND response pair.
 ## Rules
 - Output ONLY a JSON array, no markdown, no explanation
 - Each element is: {"prd_intent": {<intent object>}}
-- Every add_route MUST include a realistic request_body and response_body example
+- Every add_route MUST be accompanied by an add_example_pair intent with realistic request and response
 - Use plural nouns for collection endpoints: /api/bookmarks not /api/bookmark
 - Always specify the HTTP status code for success responses
 - Error responses follow: {"error": {"code": "NOT_FOUND", "message": "human-readable message"}}

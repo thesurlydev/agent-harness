@@ -16,10 +16,10 @@ No stringly-typed data; use newtypes, enums, and the type system to make invalid
 <<TASK_DESCRIPTION>>
 
 ## Your Intent Types
-- set_error_strategy: {"prd_intent":{"type":"set_error_strategy","approach":"thiserror enum per module","error_type":"AppError","variants":["NotFound { entity: String, id: Uuid }","Validation { message: String }","Database(sqlx::Error)","Unauthorized"],"status_mapping":{"NotFound":404,"Validation":422,"Database":500,"Unauthorized":401}}}
-- add_newtype: {"prd_intent":{"type":"add_newtype","name":"BookmarkId","inner_type":"Uuid","derives":["Debug","Clone","Copy","Serialize","Deserialize","sqlx::Type","utoipa::ToSchema"],"validation":"must be valid UUID v7","rationale":"prevent mixing bookmark IDs with other UUID types"}}
-- replace_string_with_enum: {"prd_intent":{"type":"replace_string_with_enum","field":"bookmark.status","current_type":"String","enum_name":"BookmarkStatus","variants":["Active","Archived","Deleted"],"default":"Active","derives":["Debug","Clone","Serialize","Deserialize","sqlx::Type","utoipa::ToSchema"],"serde_rename_all":"snake_case"}}
-- set_crate_choice: {"prd_intent":{"type":"set_crate_choice","domain":"http framework","crate":"axum","version":"0.8","rationale":"async, tower-compatible, strong extractors"}}
+- set_error_strategy: {"prd_intent":{"type":"set_error_strategy","approach":"thiserror enum per module","variants":[{"name":"NotFound","message":"entity not found","status":404},{"name":"Validation","message":"validation failed","status":422},{"name":"Database","message":"database error","status":500},{"name":"Unauthorized","message":"unauthorized","status":401}]}}
+- add_newtype: {"prd_intent":{"type":"add_newtype","name":"BookmarkId","inner_type":"Uuid","purpose":"prevent mixing bookmark IDs with other UUID types"}}
+- replace_string_with_enum: {"prd_intent":{"type":"replace_string_with_enum","field":"bookmark.status","enum_name":"BookmarkStatus","variants":["Active","Archived","Deleted"]}}
+- set_crate_choice: {"prd_intent":{"type":"set_crate_choice","capability":"http framework","crate_name":"axum","version":"0.8","rationale":"async, tower-compatible, strong extractors"}}
 
 ## Rust Idioms
 - Error handling: use `thiserror` for library errors, implement `IntoResponse` for API error type
