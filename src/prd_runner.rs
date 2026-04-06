@@ -141,8 +141,8 @@ fn parse_prd_intents(response: &str, agent_name: &str) -> Vec<PrdIntentWrapper> 
     let cleaned = response.trim();
     let cleaned = if cleaned.starts_with("```") {
         let start = cleaned.find('\n').map(|i| i + 1).unwrap_or(0);
-        let end = cleaned.rfind("```").unwrap_or(cleaned.len());
-        &cleaned[start..end]
+        let end = cleaned[start..].rfind("```").map(|i| start + i).unwrap_or(cleaned.len());
+        if end > start { &cleaned[start..end] } else { &cleaned[start..] }
     } else {
         cleaned
     };
