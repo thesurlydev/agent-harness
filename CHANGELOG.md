@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-12
+
 ### Added
 
 - PRD enrichment runner with 3-round protocol (parallel enrichment, adversarial review, contract lock) and parallel agent dispatch across 11 specialist roles.
