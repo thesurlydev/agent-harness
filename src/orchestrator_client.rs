@@ -28,28 +28,40 @@ impl OrchestratorClient {
         &self,
         task_id: &str,
         agent_name: &str,
-    ) -> Result<(), reqwest::Error> {
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let url = format!("{}/a2a/tasks/{}", self.base_url, task_id);
         let body = serde_json::json!(
             { "state" : "working", "assigned_agent" : agent_name }
         );
-        self.client
+        let resp = self
+            .client
             .patch(&url)
             .header("Authorization", format!("Bearer {}", self.token))
             .json(&body)
             .send()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("claim_task {task_id}: HTTP {status} — {body}").into());
+        }
         Ok(())
     }
-    pub async fn complete_task(&self, task_id: &str) -> Result<(), reqwest::Error> {
+    pub async fn complete_task(&self, task_id: &str) -> Result<(), Box<dyn std::error::Error>> {
         let url = format!("{}/a2a/tasks/{}", self.base_url, task_id);
         let body = serde_json::json!({ "state" : "completed" });
-        self.client
+        let resp = self
+            .client
             .patch(&url)
             .header("Authorization", format!("Bearer {}", self.token))
             .json(&body)
             .send()
             .await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("complete_task {task_id}: HTTP {status} — {body}").into());
+        }
         Ok(())
     }
     pub async fn get_source(&self) -> Result<String, reqwest::Error> {
