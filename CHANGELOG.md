@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- PRD enrichment runner with 3-round protocol (parallel enrichment, adversarial review, contract lock) and parallel agent dispatch across 11 specialist roles.
+- 11 PRD enrichment agent prompt templates (`prompts/prd/*.md`) for product manager, API architect, Rust engineer, DBA, frontend architect, design lead, contract enforcer, security auditor, adversary, simplifier, and ops engineer.
+- PRD types: `PrdIntentWrapper`, `PrdAgentRole`, `PrdCompletenessResponse`, `PrdVerifyResponse`, `PrdArtifactsResponse`, `VerificationReport`, `VerificationItem`.
+- `--mode` CLI flag to switch between `code` (default) and `prd` modes.
+- `--app-type` CLI flag to select agent pool (`api-only`, `full-stack`, `cli`).
+- Orchestrator client methods for PRD endpoints: `get_prd_source`, `apply_prd_intent`, `get_prd_completeness`, `verify_prd`, `get_prd_artifacts`.
+- PRD verification report (structural/behavioral/contract layers) printed after enrichment via `/a2a/prd-verify`.
+- PRD artifact derivation (OpenAPI, test skeletons, verification checklist) written to `prd-artifacts/` when `--project-dir` is set, via `/a2a/prd-artifacts`.
+- `agent_id` now sent in `complete_task` requests for audit trail alignment with conflict-free 0.6.0 SDK.
+
+### Fixed
+
+- Replace panics with resilient error handling in runner loop.
+- Check HTTP status on `claim_task` and `complete_task` responses; return errors instead of silently succeeding on non-2xx.
+- Handle markdown fence edge case in PRD intent parser where closing fence was not found.
+- Align all PRD agent prompt intent schemas with `PrdIntent` enum fields (e.g., `metric` instead of `name`/`target` for `SetSuccessMetric`).
+- Add `params` to `add_method` examples in code generation prompt.
+
 ## [0.1.3] - 2026-04-05
 
 ### Changed
