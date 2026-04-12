@@ -1,26 +1,74 @@
-use crate::types::{AgentConfig, IntentWrapper};
-use crate::orchestrator_client::OrchestratorClient;
 use crate::claude_client::ClaudeClient;
+use crate::orchestrator_client::OrchestratorClient;
+use crate::types::{AgentConfig, IntentWrapper};
+
 pub async fn run(config: AgentConfig) {
     let orch = OrchestratorClient::new(&config);
     let claude = ClaudeClient::new(&config);
-    println!("Agent {} connecting to {}", config.agent_name, config.orchestrator_url);
+    println!(
+        "Agent {} connecting to {}",
+        config.agent_name, config.orchestrator_url
+    );
+
+    let mut consecutive_empties = 0u32;
     loop {
-        let tasks = orch.get_ready_tasks().await.unwrap();
+        let tasks = match orch.get_ready_tasks().await {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("Failed to fetch ready tasks: {e}");
+                tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+                consecutive_empties += 1;
+                if consecutive_empties >= 5 {
+                    eprintln!("No reachable tasks after 5 attempts. Exiting.");
+                    break;
+                }
+                continue;
+            }
+        };
+
         if tasks.is_empty() {
-            println!("No ready tasks. Waiting 5s...");
+            consecutive_empties += 1;
+            if consecutive_empties >= 3 {
+                println!("No ready tasks after {consecutive_empties} polls. DAG complete or stalled.");
+                break;
+            }
+            println!("No ready tasks. Waiting 5s... ({consecutive_empties}/3)");
             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
             continue;
         }
+        consecutive_empties = 0;
+
         for task in &tasks {
             println!("Claiming task: {} - {}", task.id, task.description);
-            orch.claim_task(&task.id, &config.agent_name).await.unwrap();
-            let source = orch.get_source().await.unwrap();
+            if let Err(e) = orch.claim_task(&task.id, &config.agent_name).await {
+                eprintln!("  Failed to claim task {}: {e}. Skipping.", task.id);
+                continue;
+            }
+
+            let source = match orch.get_source().await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("  Failed to get source for task {}: {e}. Skipping.", task.id);
+                    continue;
+                }
+            };
+
             println!("Generating intents for task: {}", task.id);
-            let response = claude
+            let response = match claude
                 .generate_intents(&source, &task.description)
                 .await
-                .unwrap();
+            {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!(
+                        "  Claude API failed for task {}: {e}. Marking complete to unblock DAG.",
+                        task.id
+                    );
+                    let _ = orch.complete_task(&task.id).await;
+                    continue;
+                }
+            };
+
             // Strip markdown code fences if present
             let cleaned = response.trim();
             let cleaned = if cleaned.starts_with("```") {
@@ -34,31 +82,49 @@ pub async fn run(config: AgentConfig) {
                 Ok(v) => v,
                 Err(e) => {
                     eprintln!(
-                        "Failed to parse intents: {}. Response: {}", e, &
-                        cleaned[..cleaned.len().min(500)]
+                        "  Failed to parse intents for task {}: {}. Response: {}",
+                        task.id,
+                        e,
+                        &cleaned[..cleaned.len().min(500)]
                     );
+                    let _ = orch.complete_task(&task.id).await;
                     continue;
                 }
             };
+
             let mut pass = 0u32;
             let mut fail = 0u32;
             for wrapper in &intents {
-                if orch.apply_intent(wrapper).await.unwrap() {
-                    pass += 1;
-                } else {
-                    fail += 1;
+                match orch.apply_intent(wrapper).await {
+                    Ok(true) => pass += 1,
+                    Ok(false) => fail += 1,
+                    Err(e) => {
+                        eprintln!("  Intent apply error: {e}");
+                        fail += 1;
+                    }
                 }
             }
             println!(
-                "Task {}: {} intents applied ({} pass, {} fail)", task.id, intents.len(),
-                pass, fail
+                "Task {}: {} intents applied ({} pass, {} fail)",
+                task.id,
+                intents.len(),
+                pass,
+                fail
             );
-            orch.complete_task(&task.id).await.unwrap();
-        }
-        let remaining = orch.get_ready_tasks().await.unwrap();
-        if remaining.is_empty() {
-            println!("All tasks complete.");
-            break;
+
+            // Try to complete the task. Retry once on failure (validation
+            // gate can reject transiently if a concurrent intent is still
+            // being applied).
+            if let Err(e) = orch.complete_task(&task.id).await {
+                eprintln!("  complete_task {} failed: {e}. Retrying in 2s...", task.id);
+                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+                if let Err(e2) = orch.complete_task(&task.id).await {
+                    eprintln!(
+                        "  complete_task {} failed again: {e2}. Task may be stuck in WORKING.",
+                        task.id
+                    );
+                }
+            }
         }
     }
 
@@ -66,12 +132,20 @@ pub async fn run(config: AgentConfig) {
     if let Some(ref project_dir) = config.project_dir {
         println!("\n--- Compile-fix loop ---");
 
-        // Sync source from server
-        let source = orch.get_source().await.unwrap();
+        let source = match orch.get_source().await {
+            Ok(s) => s,
+            Err(e) => {
+                eprintln!("Failed to sync source: {e}");
+                return;
+            }
+        };
         write_source_files(&source, project_dir);
 
         for round in 1..=config.max_fix_rounds {
-            println!("Fix round {}/{}: running cargo check...", round, config.max_fix_rounds);
+            println!(
+                "Fix round {}/{}: running cargo check...",
+                round, config.max_fix_rounds
+            );
             let output = std::process::Command::new("cargo")
                 .arg("check")
                 .current_dir(project_dir)
@@ -85,11 +159,22 @@ pub async fn run(config: AgentConfig) {
 
             let stderr = String::from_utf8_lossy(&output.stderr);
             let error_count = stderr.matches("error[E").count();
-            println!("cargo check failed: {} errors", error_count);
+            println!("cargo check failed: {error_count} errors");
 
-            // Send errors to Claude for fixes
-            let current_source = orch.get_source().await.unwrap();
-            let response = claude.generate_fixes(&current_source, &stderr).await.unwrap();
+            let current_source = match orch.get_source().await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to sync source for fix round: {e}");
+                    continue;
+                }
+            };
+            let response = match claude.generate_fixes(&current_source, &stderr).await {
+                Ok(r) => r,
+                Err(e) => {
+                    eprintln!("Claude API failed for fix round {round}: {e}");
+                    continue;
+                }
+            };
 
             let cleaned = response.trim();
             let cleaned = if cleaned.starts_with("```") {
@@ -103,7 +188,7 @@ pub async fn run(config: AgentConfig) {
             let intents: Vec<IntentWrapper> = match serde_json::from_str(cleaned) {
                 Ok(v) => v,
                 Err(e) => {
-                    eprintln!("Failed to parse fix intents: {}", e);
+                    eprintln!("Failed to parse fix intents: {e}");
                     continue;
                 }
             };
@@ -111,16 +196,27 @@ pub async fn run(config: AgentConfig) {
             let mut pass = 0u32;
             let mut fail = 0u32;
             for wrapper in &intents {
-                if orch.apply_intent(wrapper).await.unwrap() {
-                    pass += 1;
-                } else {
-                    fail += 1;
+                match orch.apply_intent(wrapper).await {
+                    Ok(true) => pass += 1,
+                    Ok(false) => fail += 1,
+                    Err(e) => {
+                        eprintln!("  Fix intent apply error: {e}");
+                        fail += 1;
+                    }
                 }
             }
-            println!("Fix round {}: {} intents ({} pass, {} fail)", round, intents.len(), pass, fail);
+            println!(
+                "Fix round {round}: {} intents ({pass} pass, {fail} fail)",
+                intents.len()
+            );
 
-            // Re-sync source
-            let source = orch.get_source().await.unwrap();
+            let source = match orch.get_source().await {
+                Ok(s) => s,
+                Err(e) => {
+                    eprintln!("Failed to re-sync source: {e}");
+                    continue;
+                }
+            };
             write_source_files(&source, project_dir);
         }
 
@@ -135,7 +231,10 @@ pub async fn run(config: AgentConfig) {
         } else {
             let stderr = String::from_utf8_lossy(&output.stderr);
             let error_count = stderr.matches("error[E").count();
-            eprintln!("Still {} errors after {} fix rounds.", error_count, config.max_fix_rounds);
+            eprintln!(
+                "Still {error_count} errors after {} fix rounds.",
+                config.max_fix_rounds
+            );
         }
     }
 }
@@ -169,7 +268,5 @@ fn write_source_files(source: &str, project_dir: &str) {
         std::fs::write(&dest, current_lines.join("\n") + "\n").ok();
         count += 1;
     }
-    println!("Synced {} files to {}", count, project_dir);
+    println!("Synced {count} files to {project_dir}");
 }
-
-
