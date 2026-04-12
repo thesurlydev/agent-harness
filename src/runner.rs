@@ -64,7 +64,7 @@ pub async fn run(config: AgentConfig) {
                         "  Claude API failed for task {}: {e}. Marking complete to unblock DAG.",
                         task.id
                     );
-                    let _ = orch.complete_task(&task.id).await;
+                    let _ = orch.complete_task(&task.id, &config.agent_name).await;
                     continue;
                 }
             };
@@ -87,7 +87,7 @@ pub async fn run(config: AgentConfig) {
                         e,
                         &cleaned[..cleaned.len().min(500)]
                     );
-                    let _ = orch.complete_task(&task.id).await;
+                    let _ = orch.complete_task(&task.id, &config.agent_name).await;
                     continue;
                 }
             };
@@ -115,10 +115,10 @@ pub async fn run(config: AgentConfig) {
             // Try to complete the task. Retry once on failure (validation
             // gate can reject transiently if a concurrent intent is still
             // being applied).
-            if let Err(e) = orch.complete_task(&task.id).await {
+            if let Err(e) = orch.complete_task(&task.id, &config.agent_name).await {
                 eprintln!("  complete_task {} failed: {e}. Retrying in 2s...", task.id);
                 tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-                if let Err(e2) = orch.complete_task(&task.id).await {
+                if let Err(e2) = orch.complete_task(&task.id, &config.agent_name).await {
                     eprintln!(
                         "  complete_task {} failed again: {e2}. Task may be stuck in WORKING.",
                         task.id

@@ -47,9 +47,9 @@ impl OrchestratorClient {
         }
         Ok(())
     }
-    pub async fn complete_task(&self, task_id: &str) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn complete_task(&self, task_id: &str, agent_name: &str) -> Result<(), Box<dyn std::error::Error>> {
         let url = format!("{}/a2a/tasks/{}", self.base_url, task_id);
-        let body = serde_json::json!({ "state" : "completed" });
+        let body = serde_json::json!({ "state" : "completed", "agent_id": agent_name });
         let resp = self
             .client
             .patch(&url)
