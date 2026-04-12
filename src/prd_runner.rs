@@ -131,6 +131,91 @@ pub async fn run_prd_enrichment(config: &AgentConfig) {
         println!("Blocking flags: {:?}", completeness.blocking_flags);
     }
 
+    // Three-layer verification (structural, behavioral, contract)
+    match orch.verify_prd().await {
+        Ok(v) => {
+            let r = &v.report;
+            println!("\n--- PRD Verification Report ---");
+            println!("Product: {}", r.product_name);
+            println!(
+                "Structural: {} pass / {} fail",
+                r.structural_pass, r.structural_fail
+            );
+            println!(
+                "Behavioral: {} pass / {} fail / {} skipped",
+                r.behavioral_pass, r.behavioral_fail, r.behavioral_skipped
+            );
+            println!(
+                "Contract: {} pass / {} fail / {} warnings",
+                r.contract_pass, r.contract_fail, r.contract_warnings
+            );
+            println!(
+                "Score: {:.1}% ({}/{} checks passed)",
+                r.score_percent, r.total_pass, r.total_checks
+            );
+            println!("Deploy ready: {}", r.deploy_ready);
+            if !r.blocking_failures.is_empty() {
+                println!("Blocking failures:");
+                for f in &r.blocking_failures {
+                    println!("  - {}", f);
+                }
+            }
+        }
+        Err(e) => {
+            eprintln!("PRD verification failed: {e}");
+        }
+    }
+
+    // Derive artifacts (OpenAPI, test skeletons, verification checklist)
+    match orch.get_prd_artifacts().await {
+        Ok(artifacts) => {
+            if let Some(ref dir) = config.project_dir {
+                let out = std::path::Path::new(dir).join("prd-artifacts");
+                std::fs::create_dir_all(&out).ok();
+
+                let openapi_path = out.join("openapi.json");
+                std::fs::write(
+                    &openapi_path,
+                    serde_json::to_string_pretty(&artifacts.openapi).unwrap(),
+                )
+                .ok();
+
+                let tests_path = out.join("test_skeletons.rs");
+                std::fs::write(&tests_path, &artifacts.test_skeletons).ok();
+
+                let checklist_path = out.join("verification_checklist.json");
+                std::fs::write(
+                    &checklist_path,
+                    serde_json::to_string_pretty(&artifacts.verification_checklist).unwrap(),
+                )
+                .ok();
+
+                println!("\n--- PRD Artifacts ---");
+                println!("Written to {}", out.display());
+                println!("  - openapi.json");
+                println!("  - test_skeletons.rs");
+                println!("  - verification_checklist.json");
+            } else {
+                println!("\n--- PRD Artifacts ---");
+                println!(
+                    "OpenAPI: {} bytes",
+                    serde_json::to_string(&artifacts.openapi).unwrap().len()
+                );
+                println!("Test skeletons: {} bytes", artifacts.test_skeletons.len());
+                println!(
+                    "Verification checklist: {} bytes",
+                    serde_json::to_string(&artifacts.verification_checklist)
+                        .unwrap()
+                        .len()
+                );
+                println!("(pass --project-dir to write artifacts to disk)");
+            }
+        }
+        Err(e) => {
+            eprintln!("PRD artifact derivation failed: {e}");
+        }
+    }
+
     // Print final PRD
     let final_prd = orch.get_prd_source().await.unwrap();
     println!("\n--- Final Enriched PRD ---");

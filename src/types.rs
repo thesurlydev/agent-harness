@@ -88,6 +88,47 @@ pub struct PrdCompletenessResponse {
     pub routes_with_examples: usize,
     pub routes_with_error_cases: usize,
 }
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PrdVerifyResponse {
+    pub report: VerificationReport,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VerificationReport {
+    pub product_name: String,
+    pub items: Vec<VerificationItem>,
+    pub structural_pass: usize,
+    pub structural_fail: usize,
+    pub behavioral_pass: usize,
+    pub behavioral_fail: usize,
+    pub behavioral_skipped: usize,
+    pub contract_pass: usize,
+    pub contract_fail: usize,
+    pub contract_warnings: usize,
+    pub total_checks: usize,
+    pub total_pass: usize,
+    pub total_fail: usize,
+    pub score_percent: f64,
+    pub blocking_failures: Vec<String>,
+    pub deploy_ready: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct VerificationItem {
+    pub id: String,
+    pub layer: String,
+    pub check: String,
+    pub status: String,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct PrdArtifactsResponse {
+    pub openapi: serde_json::Value,
+    pub test_skeletons: String,
+    pub verification_checklist: serde_json::Value,
+}
 #[derive(Debug, Clone, Deserialize)]
 pub struct Task {
     pub id: String,

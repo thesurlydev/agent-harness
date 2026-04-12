@@ -1,4 +1,4 @@
-use crate::types::{AgentConfig, Task, IntentWrapper, PrdIntentWrapper, PrdCompletenessResponse};
+use crate::types::{AgentConfig, Task, IntentWrapper, PrdIntentWrapper, PrdCompletenessResponse, PrdVerifyResponse, PrdArtifactsResponse};
 pub struct OrchestratorClient {
     pub client: reqwest::Client,
     pub base_url: String,
@@ -116,6 +116,36 @@ impl OrchestratorClient {
             .send().await?
             .json::<PrdCompletenessResponse>().await?;
         Ok(resp)
+    }
+
+    pub async fn get_prd_artifacts(&self) -> Result<PrdArtifactsResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/a2a/prd-artifacts", self.base_url);
+        let resp = self.client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("get_prd_artifacts: HTTP {status} — {body}").into());
+        }
+        let parsed = resp.json::<PrdArtifactsResponse>().await?;
+        Ok(parsed)
+    }
+
+    pub async fn verify_prd(&self) -> Result<PrdVerifyResponse, Box<dyn std::error::Error>> {
+        let url = format!("{}/a2a/prd-verify", self.base_url);
+        let resp = self.client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", self.token))
+            .send().await?;
+        if !resp.status().is_success() {
+            let status = resp.status();
+            let body = resp.text().await.unwrap_or_default();
+            return Err(format!("verify_prd: HTTP {status} — {body}").into());
+        }
+        let parsed = resp.json::<PrdVerifyResponse>().await?;
+        Ok(parsed)
     }
 }
 
