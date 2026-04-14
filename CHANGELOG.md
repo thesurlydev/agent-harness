@@ -20,11 +20,11 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- Replace panics with resilient error handling in runner loop.
+- Replace panics with resilient error handling in runner loop. Failed intent parsing and Claude API errors now mark the task complete to unblock downstream DAG tasks (reverting v0.1.1 skip-without-complete behavior).
 - Check HTTP status on `claim_task` and `complete_task` responses; return errors instead of silently succeeding on non-2xx.
 - Handle markdown fence edge case in PRD intent parser where closing fence was not found.
 - Align all PRD agent prompt intent schemas with `PrdIntent` enum fields (e.g., `metric` instead of `name`/`target` for `SetSuccessMetric`).
-- Add `params` to `add_method` examples in code generation prompt.
+- Rewrite code generation and fix prompts: add `params` to `add_method` examples, restructure intent reference into labeled sections, correct Mutex guidance from `tokio::sync` to `std::sync`, add import-handling rules, and remove stale Axum 0.8/rusqlite references from fix prompt.
 
 ## [0.1.3] - 2026-04-05
 
@@ -45,7 +45,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - Strip markdown code fences from Claude responses before JSON parsing.
-- Skip failed intent-parse tasks instead of marking them complete (avoids blocking the DAG).
+- Skip failed intent-parse tasks without marking them complete (allows retry on next poll).
 
 ### Changed
 
