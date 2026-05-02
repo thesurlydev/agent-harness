@@ -4,3 +4,4 @@
 *.crdt
 .auth-token
 apply-intents.sh
+.DS_Store
